@@ -29,17 +29,36 @@ async function run() {
     const database = client.db("inventory_management");
     // create users collection
     const users = database.collection("users");
+    // create shops collection
+    const shops = database.collection("shops")
 
 
     // all post method here
+
+    // add user in db
     app.post("/users",async(req,res)=>{
        const userInfo = req.body;
        const user =await users.insertOne(userInfo)
        res.status(201).send(user)
 
     })
-
-
+// add shop in db
+app.post("/createshop",async(req,res)=>{
+    // store limit
+   
+    const shopInfo = req.body;
+      shopInfo.productLimit = 3;
+     const {useremail}= shopInfo;
+     const query = {useremail}
+     const haveStore = await shops.findOne(query);
+     if(haveStore){
+         res.status(409).send({error:"already have store"})
+     }else{
+        const shop = await shops.insertOne(shopInfo);
+        res.status(201).send(shop)
+     }
+    
+})
 
 
 
