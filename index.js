@@ -30,6 +30,10 @@ async function run() {
     const users = database.collection("users");
     // create shops collection
     const shops = database.collection("shops");
+    // create product collections
+    const products = database.collection("product")
+
+
 
     // all get methods
 
@@ -49,7 +53,14 @@ async function run() {
       }
     });
 
-
+    // get product count means how many prooduct i have in products collection
+  
+    app.get("/productcount",async(req,res)=>{
+       const useremail = req.query.email
+        const query = {useremail}
+        const count = await products.find(query).toArray()
+        res.send(count)
+    })
 
 
 
