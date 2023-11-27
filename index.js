@@ -33,6 +33,25 @@ async function run() {
     const shops = database.collection("shops")
 
 
+// all get methods 
+
+app.get("/users",async(req,res)=>{
+   const useremail = req?.query?.email;
+    const query = {useremail};
+    const hasStore =await shops.findOne(query);
+    console.log(hasStore)
+    if(hasStore){
+        res.send(hasStore)
+    }else{
+         res.send([])
+    }
+})
+
+
+
+
+
+
     // all post method here
 
     // add user in db
