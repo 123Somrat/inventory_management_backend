@@ -8,6 +8,7 @@ app.use(cors());
 const PORT = process.env.PORT || 3000;
 
 const { MongoClient, ServerApiVersion } = require("mongodb");
+const { Carousel } = require("flowbite-react");
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.6bozc1k.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -53,8 +54,8 @@ async function run() {
       }
     });
 
+
     // get product count means how many prooduct i have in products collection
-  
     app.get("/productcount",async(req,res)=>{
        const useremail = req.query.email
         const query = {useremail}
@@ -73,6 +74,7 @@ async function run() {
       const user = await users.insertOne(userInfo);
       res.status(201).send(user);
     });
+
     // add shop in db
     app.post("/createshop", async (req, res) => {
       // store limit
@@ -89,6 +91,56 @@ async function run() {
         res.status(201).send(shop);
       }
     });
+
+   app.post("/products",async(req,res)=>{
+    // gether productInfo from request body
+       const productInfo = req.body;
+       const {useremail,productname,imageUrl,productlocation,profitmargin,productquantity,productioncost,discount,productdescription,} = productInfo;
+        const findShopQuery = {useremail}
+        const date= new Date();
+        const day = date.getDay();
+        const month = date.getMonth();
+        const year = date.getFullYear();
+        const productAddingDate = `${day}:${month}:${year}`;
+        // get the shop details for current user
+        const {_id:shop_id,shopname,productLimit} = await shops.findOne(findShopQuery);
+        
+         // calculate product selling price depends on users data;
+         const tax = 7.5;
+         const sellingPrice = productioncost + (productioncost*tax/100) + (productioncost*profitmargin/100)
+          
+
+         // create product object 
+         const product = {
+             shop_id,
+             shopname,
+             useremail,
+             productname,
+             imageUrl,
+             productlocation,
+             profitmargin,
+             productquantity,
+             productioncost,
+             discount,
+             productdescription,
+             productAddingDate,
+             sellingPrice
+         }
+         // query for how many product user already addes in db
+         const query = {useremail}
+         const createdShopCount = await products.find(query).toArray();
+         const createStore = createdShopCount.length;
+
+         if(createStore<productLimit){
+           const productCreateInfo = await products.insertOne(product);
+           res.status(201).send(productCreateInfo)
+         }else{
+            res.status(403).send("opps your product create limit exceed")
+         }
+          
+   })
+
+
 
     // health check route
     app.get("/health", (req, res) => {
