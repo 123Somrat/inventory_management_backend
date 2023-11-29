@@ -64,6 +64,19 @@ async function run() {
     })
 
 
+    // get all product
+    app.get("/products",async(req,res)=>{
+      const useremail = req.query.email;
+      const query = {useremail};
+      const productList  =await products.find(query).toArray()
+       res.status(200).send(productList)
+
+
+    })
+
+
+
+
 
 
     // all post method here
@@ -124,7 +137,8 @@ async function run() {
              discount,
              productdescription,
              productAddingDate,
-             sellingPrice
+             sellingPrice,
+             saleCount:0
          }
          // query for how many product user already addes in db
          const query = {useremail}
