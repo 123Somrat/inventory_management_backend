@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cors());
 const PORT = process.env.PORT || 3000;
 
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const { Carousel } = require("flowbite-react");
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.6bozc1k.mongodb.net/?retryWrites=true&w=majority`;
 
@@ -154,7 +154,14 @@ async function run() {
           
    })
 
+// all delete Method is here
 
+app.delete("/products/:id",async(req,res)=>{
+    const id = req.params.id;
+    const query = {_id : new ObjectId(id)}
+   const deletetedProduct =await products.deleteOne(query)
+   res.status(200).send(deletetedProduct)
+})
 
     // health check route
     app.get("/health", (req, res) => {
