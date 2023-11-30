@@ -33,7 +33,8 @@ async function run() {
     const shops = database.collection("shops");
     // create product collections
     const products = database.collection("product")
-
+    // create productCart collections
+    const carts = database.collection("carts")
 
 
     // all get methods
@@ -70,11 +71,16 @@ async function run() {
       const query = {useremail};
       const productList  =await products.find(query).toArray()
        res.status(200).send(productList)
-
-
     })
 
+    // get a single product from product collection
+     app.get("/products/:id",async(req,res)=>{
+         const id = req.params.id;
+         const query = {_id:new ObjectId(id)}
+         const product = await products.findOne(query)
+         res.status(200).send(product)
 
+     })
 
 
 
@@ -153,6 +159,57 @@ async function run() {
          }
           
    })
+
+   // add product in cart
+   app.post("/productcarts",async(req,res)=>{
+        const productData = req.body;
+        // checking item alredy in cart or not
+        const query = productData.shopId;
+       
+        const itemExeist = await carts.findOne({shopId:query});
+
+        if(!itemExeist){
+           const cart = await carts.insertOne(productData);
+           res.status(201).send(cart)
+        }else{
+            res.status(409).send({msg:"peoduct already in cart"})
+        }
+      
+        
+
+
+   })
+
+   // patch mathod is here
+
+   app.patch("/products/:id",async(req,res)=>{
+        const id = req.params;
+        const updatedProductInfos = req.body;
+        const query = {_id : new ObjectId(id)}
+        const updatedProductInfo = {
+           $set : {
+            productname:updatedProductInfos.productname,
+            imageUrl : updatedProductInfos.imageUrl,
+            productlocation : updatedProductInfos.productlocation,
+            profitmargin : updatedProductInfos.profitmargin,
+            productquantity : updatedProductInfos.productquantity,
+            productioncost : updatedProductInfos.productioncost,
+            discount : updatedProductInfos.discount,
+            productdescription : updatedProductInfos.productdescription
+           }
+
+        }
+        const updatedProduct = await products.updateOne(query,updatedProductInfo);
+      
+        if(updatedProduct.modifiedCount>0){
+          res.status(200).send(updatedProduct)
+        }else{
+           res.status(500).send("Opps something is wrong")
+        }
+
+   })
+
+
 
 // all delete Method is here
 
