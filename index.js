@@ -35,6 +35,14 @@ async function run() {
     const products = database.collection("product")
     // create productCart collections
     const carts = database.collection("carts")
+    // create sales Collections
+    const salescollections = database.collection("salescollection")
+
+
+    
+  
+
+
 
 
     // all get methods
@@ -84,8 +92,19 @@ async function run() {
      // get all cart product from carts
    app.get("/carts",async(req,res)=>{
        const query = req.query;
-       const cart =await carts.find(query).toArray()
-       res.send(cart)
+       const cart =await carts.find(query).toArray();
+       const productId = cart.map(cartItem=> new ObjectId(cartItem.productId));
+      
+       // get the product from product collectionn useing aggregator 
+        const cartProduct = await products.aggregate([{
+              $match : {
+                _id : {$in : productId}
+              }
+
+
+        }]).toArray()
+      
+       res.send(cartProduct)
 
 
    })
@@ -170,8 +189,8 @@ async function run() {
    app.post("/carts",async(req,res)=>{
         const productData = req.body;
         // checking item alredy in cart or not
-        const query = productData.shopId;
-        const itemExeist = await carts.findOne({shopId:query});
+        const query = productData.productId;
+        const itemExeist = await carts.findOne({productId:query});
 
           // if product not in cart then we add this product on cart collections else we not
         if(!itemExeist){
@@ -181,11 +200,53 @@ async function run() {
         }else{
             res.status(409).send({msg:"peoduct already in cart"})
         }
-      
-        
-
 
    })
+
+
+   app.post("/salescollections",async(req,res)=>{
+    const saledProduct = req.body;
+    const salesProductId = saledProduct.saledproductId.map(salesproduct=>new ObjectId(salesproduct))
+  
+    /*
+    const incrementSalesProductCount =await products.aggregate([
+         {
+          $match : {
+            _id : {$in : salesProductId}
+          }
+
+         }
+
+    ]).toArray()
+    */
+   // find the product useing id and then increment the salesCount and decrement the product quantity
+      const incrementSalesProductCount =await  products.updateMany(
+        {_id:{$in : salesProductId }},
+        {
+           $inc : {
+            saleCount : 1 ,
+            productquantity : -1
+
+           }
+
+        }
+        
+        )
+     
+    // delete cart items for this specific user after 
+     const query = {useremail:saledProduct?.useremail};
+     const deletedAllCartItems =await carts.deleteMany(query)
+     if(deletedAllCartItems.deletedCount>0){
+       res.status(200).send(deletedAllCartItems)
+     }else{
+       res.status(500).send({msg:"Internal server error"})
+     }
+     
+
+}) 
+
+
+
 
    // patch mathod is here
 
