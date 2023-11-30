@@ -81,8 +81,14 @@ async function run() {
          res.status(200).send(product)
 
      })
+     // get all cart product from carts
+   app.get("/carts",async(req,res)=>{
+       const query = req.query;
+       const cart =await carts.find(query).toArray()
+       res.send(cart)
 
 
+   })
 
 
     // all post method here
@@ -161,16 +167,17 @@ async function run() {
    })
 
    // add product in cart
-   app.post("/productcarts",async(req,res)=>{
+   app.post("/carts",async(req,res)=>{
         const productData = req.body;
         // checking item alredy in cart or not
         const query = productData.shopId;
-       
         const itemExeist = await carts.findOne({shopId:query});
 
+          // if product not in cart then we add this product on cart collections else we not
         if(!itemExeist){
            const cart = await carts.insertOne(productData);
            res.status(201).send(cart)
+      
         }else{
             res.status(409).send({msg:"peoduct already in cart"})
         }
