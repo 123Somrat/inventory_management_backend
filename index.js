@@ -93,7 +93,7 @@ async function run() {
    app.get("/carts",async(req,res)=>{
        const query = req.query;
        const cart =await carts.find(query).toArray();
-       const productId = cart.map(cartItem=> new ObjectId(cartItem.productId));
+       const productId = cart.map(cartItem=> new ObjectId(cartItem.productId))
       
        // get the product from product collectionn useing aggregator 
         const cartProduct = await products.aggregate([{
@@ -115,7 +115,7 @@ app.get("/salessummary",async(req,res)=>{
       const query = req.query;
       const salesDetails = await  salescollections.findOne(query)
       const saledProductId = salesDetails?.saledproductId
-       const productId = saledProductId?.map(id=>new ObjectId(id));
+       const productId = saledProductId?.map(productsids=>new ObjectId(productsids));
        
         const salesProductCount = await products.aggregate([
           {
@@ -146,6 +146,89 @@ app.get("/salessummary",async(req,res)=>{
     res.status(200).send({totalInvest,totalSales,totalprofit})
 
 })
+
+
+
+// sales History route
+
+ app.get("/saleshistory",async(req,res)=>{
+      const query = req.query;
+      const salesHistory =await salescollections.findOne(query);
+      
+       const salesProductid =salesHistory?.saledproductId?.map(productId=>new ObjectId(productId))
+        const saledproductId = salesHistory?.saledproductId;
+      
+    /*
+    const result = await salescollections.aggregate([
+        {
+           $unwind : "$saledproductId"
+        },
+        {
+          $lookup: {
+            from: 'products',
+            localField: 'saledproductId',
+            foreignField: '_id',
+            as: 'joinedData'
+          }
+        },
+  
+
+
+
+    ]).toArray()
+
+*/
+
+
+      const salesProductHistory = await products.aggregate([
+
+        {
+         $match : {
+          _id :{$in :  salesProductid },
+        
+         }
+      }
+    
+    
+    ]).toArray();
+
+    
+    const salesDate = salesHistory.salesDate;
+   
+
+
+
+ 
+
+
+
+
+
+
+
+
+
+
+    
+    // console.log(salesProductHistory)
+   res.status(200).send(salesProductHistory)
+
+
+    const totalInvest = salesProductHistory.reduce((int,cur)=>{
+      return int + cur.productioncost * cur.saleCount
+   },0);
+
+    
+    const totalSales =salesProductHistory.reduce((int,cur)=>{
+      return int + cur.sellingPrice* cur.saleCount
+   },0);
+
+    // Total profit
+   const totalprofit = totalSales - totalInvest;
+  
+
+ })
+
 
 
     // all post method here
