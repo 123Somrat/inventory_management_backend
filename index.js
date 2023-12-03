@@ -32,18 +32,11 @@ async function run() {
     // create shops collection
     const shops = database.collection("shops");
     // create product collections
-    const products = database.collection("product")
+    const products = database.collection("product");
     // create productCart collections
-    const carts = database.collection("carts")
+    const carts = database.collection("carts");
     // create sales Collections
-    const salescollections = database.collection("salescollection")
-
-
-    
-  
-
-
-
+    const salescollections = database.collection("salescollection");
 
     // all get methods
 
@@ -53,112 +46,110 @@ async function run() {
       const query = { useremail };
       // checking user have store or not
       const hasStore = await shops.findOne(query);
-     // if user have to store then we send the store data
+      // if user have to store then we send the store data
       if (hasStore) {
         res.send(hasStore);
-      } 
+      }
       // else send an emty array
       else {
         res.send([]);
       }
     });
 
-
     // get product count means how many prooduct i have in products collection
-    app.get("/productcount",async(req,res)=>{
-       const useremail = req.query.email
-        const query = {useremail}
-        const count = await products.find(query).toArray()
-        res.send(count)
-    })
-
+    app.get("/productcount", async (req, res) => {
+      const useremail = req.query.email;
+      const query = { useremail };
+      const count = await products.find(query).toArray();
+      res.send(count);
+    });
 
     // get all product
-    app.get("/products",async(req,res)=>{
+    app.get("/products", async (req, res) => {
       const useremail = req.query.email;
-      const query = {useremail};
-      const productList  =await products.find(query).toArray()
-       res.status(200).send(productList)
-    })
+      const query = { useremail };
+      const productList = await products.find(query).toArray();
+      res.status(200).send(productList);
+    });
 
     // get a single product from product collection
-     app.get("/products/:id",async(req,res)=>{
-         const id = req.params.id;
-         const query = {_id:new ObjectId(id)}
-         const product = await products.findOne(query)
-         res.status(200).send(product)
-
-     })
-     // get all cart product from carts
-   app.get("/carts",async(req,res)=>{
-       const query = req.query;
-       const cart =await carts.find(query).toArray();
-       const productId = cart.map(cartItem=> new ObjectId(cartItem.productId))
-      
-       // get the product from product collectionn useing aggregator 
-        const cartProduct = await products.aggregate([{
-              $match : {
-                _id : {$in : productId}
-              }
-
-
-        }]).toArray()
-      
-       res.send(cartProduct)
-
-
-   })
-
-// get sales summary
-
-app.get("/salessummary",async(req,res)=>{
+    app.get("/products/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const product = await products.findOne(query);
+      res.status(200).send(product);
+    });
+    // get all cart product from carts
+    app.get("/carts", async (req, res) => {
       const query = req.query;
-      const salesDetails = await  salescollections.findOne(query)
-      const saledProductId = salesDetails?.saledproductId
-       const productId = saledProductId?.map(productsids=>new ObjectId(productsids));
-       
-        const salesProductCount = await products.aggregate([
+      const cart = await carts.find(query).toArray();
+      const productId = cart.map(
+        (cartItem) => new ObjectId(cartItem.productId)
+      );
+
+      // get the product from product collectionn useing aggregator
+      const cartProduct = await products
+        .aggregate([
           {
-           $match : {
-            _id :{$in : productId },
-          
-           }
-        }
-      
-      
-      ]).toArray()
-  
-    
-       //const saledProductsId =  saledProductData.map(products=>(products.saledproductId))
-       // Calculate production cost for those selling items
-       const totalInvest = salesProductCount.reduce((int,cur)=>{
-        return int + cur.productioncost * cur.saleCount
-     },0);
+            $match: {
+              _id: { $in: productId },
+            },
+          },
+        ])
+        .toArray();
 
-      // Total sales 
-     const totalSales =salesProductCount.reduce((int,cur)=>{
-      return int + cur.sellingPrice* cur.saleCount
-   },0);
+      res.send(cartProduct);
+    });
 
-    // Total profit
-   const totalprofit = totalSales - totalInvest;
+    // get sales summary
 
-    res.status(200).send({totalInvest,totalSales,totalprofit})
-
-})
-
-
-
-// sales History route
-
- app.get("/saleshistory",async(req,res)=>{
+    app.get("/salessummary", async (req, res) => {
       const query = req.query;
-      const salesHistory =await salescollections.findOne(query);
-      
-       const salesProductid =salesHistory?.saledproductId?.map(productId=>new ObjectId(productId))
-        const saledproductId = salesHistory?.saledproductId;
-      
-    /*
+      const salesDetails = await salescollections.findOne(query);
+      const saledProductId = salesDetails?.saledproductId;
+      const productId = saledProductId?.map(
+        (productsids) => new ObjectId(productsids)
+      );
+
+      const salesProductCount = await products
+        .aggregate([
+          {
+            $match: {
+              _id: { $in: productId },
+            },
+          },
+        ])
+        .toArray();
+
+      //const saledProductsId =  saledProductData.map(products=>(products.saledproductId))
+      // Calculate production cost for those selling items
+      const totalInvest = salesProductCount.reduce((int, cur) => {
+        return int + cur.productioncost * cur.saleCount;
+      }, 0);
+
+      // Total sales
+      const totalSales = salesProductCount.reduce((int, cur) => {
+        return int + cur.sellingPrice * cur.saleCount;
+      }, 0);
+
+      // Total profit
+      const totalprofit = totalSales - totalInvest;
+
+      res.status(200).send({ totalInvest, totalSales, totalprofit });
+    });
+
+    // sales History route
+
+    app.get("/saleshistory", async (req, res) => {
+      const query = req.query;
+      const salesHistory = await salescollections.findOne(query);
+
+      const salesProductid = salesHistory?.saledproductId?.map(
+        (productId) => new ObjectId(productId)
+      );
+      const saledproductId = salesHistory?.saledproductId;
+
+      /*
     const result = await salescollections.aggregate([
         {
            $unwind : "$saledproductId"
@@ -179,55 +170,65 @@ app.get("/salessummary",async(req,res)=>{
 
 */
 
+      const salesProductHistory = await products
+        .aggregate([
+          {
+            $match: {
+              _id: { $in: salesProductid },
+            },
+          },
+        ])
+        .toArray();
 
-      const salesProductHistory = await products.aggregate([
+      const salesDate = salesHistory.salesDate;
 
-        {
-         $match : {
-          _id :{$in :  salesProductid },
-        
-         }
-      }
-    
-    
-    ]).toArray();
+      // console.log(salesProductHistory)
+      res.status(200).send(salesProductHistory);
 
-    
-    const salesDate = salesHistory.salesDate;
-   
+      const totalInvest = salesProductHistory.reduce((int, cur) => {
+        return int + cur.productioncost * cur.saleCount;
+      }, 0);
 
+      const totalSales = salesProductHistory.reduce((int, cur) => {
+        return int + cur.sellingPrice * cur.saleCount;
+      }, 0);
 
-
- 
-
-
-
-
-
-
-
-
+      // Total profit
+      const totalprofit = totalSales - totalInvest;
+    });
 
 
-    
-    // console.log(salesProductHistory)
-   res.status(200).send(salesProductHistory)
+// admin gets routes
+
+// permission check middleware
+const haspermission = (req,_res,next)=>{
+    const email = req.query.useremail;
+    console.log(email)
+   if(email==="somrat@gmail.com"){
+       next()
+   }else{
+       req.status(403).send({msg : "Opps something wrong"})
+   }
+}
+// get all users for admins
+app.get("/allusers",haspermission,async(req,res)=>{
+   const allusers =await users.find().toArray();
+   res.status(200).send(allusers)
+})
+
+// get all shops for admin
+
+app.get("/allshops",haspermission,async(req,res)=>{
+     const allShops = await shops.find().toArray();
+      res.status(200).send(allShops)
+})
 
 
-    const totalInvest = salesProductHistory.reduce((int,cur)=>{
-      return int + cur.productioncost * cur.saleCount
-   },0);
 
-    
-    const totalSales =salesProductHistory.reduce((int,cur)=>{
-      return int + cur.sellingPrice* cur.saleCount
-   },0);
 
-    // Total profit
-   const totalprofit = totalSales - totalInvest;
-  
 
- })
+
+
 
 
 
@@ -249,7 +250,7 @@ app.get("/salessummary",async(req,res)=>{
       const { useremail } = shopInfo;
       const query = { useremail };
       const haveStore = await shops.findOne(query);
-      console.log(haveStore)
+      console.log(haveStore);
       if (haveStore) {
         res.status(409).send({ error: "already have store" });
       } else {
@@ -258,82 +259,95 @@ app.get("/salessummary",async(req,res)=>{
       }
     });
 
-   app.post("/products",async(req,res)=>{
-    // gether productInfo from request body
-       const productInfo = req.body;
-       const {useremail,productname,imageUrl,productlocation,profitmargin,productquantity,productioncost,discount,productdescription,} = productInfo;
-        const findShopQuery = {useremail}
-        const date= new Date();
-        const day = date.getDay();
-        const month = date.getMonth();
-        const year = date.getFullYear();
-        const productAddingDate = `${day}:${month}:${year}`;
-        // get the shop details for current user
-        const {_id:shop_id,shopname,productLimit} = await shops.findOne(findShopQuery);
-        
-         // calculate product selling price depends on users data;
-         const tax = 7.5;
-         const sellingPrice = productioncost + (productioncost*tax/100) + (productioncost*profitmargin/100)
-          
+    app.post("/products", async (req, res) => {
+      // gether productInfo from request body
+      const productInfo = req.body;
+      const {
+        useremail,
+        productname,
+        imageUrl,
+        productlocation,
+        profitmargin,
+        productquantity,
+        productioncost,
+        discount,
+        productdescription,
+      } = productInfo;
+      const findShopQuery = { useremail };
+      const date = new Date();
+      const day = date.getDay();
+      const month = date.getMonth();
+      const year = date.getFullYear();
+      const productAddingDate = `${day}:${month}:${year}`;
+      // get the shop details for current user
+      const {
+        _id: shop_id,
+        shopname,
+        productLimit,
+      } = await shops.findOne(findShopQuery);
 
-         // create product object 
-         const product = {
-             shop_id,
-             shopname,
-             useremail,
-             productname,
-             imageUrl,
-             productlocation,
-             profitmargin,
-             productquantity,
-             productioncost,
-             discount,
-             productdescription,
-             productAddingDate,
-             sellingPrice,
-             saleCount:0
-         }
-         // query for how many product user already addes in db
-         const query = {useremail}
-         const createdShopCount = await products.find(query).toArray();
-         const createStore = createdShopCount.length;
-        console.log(createStore)
-         if(createStore<productLimit){
-           const productCreateInfo = await products.insertOne(product);
-           res.status(201).send(productCreateInfo)
-         }else{
-            res.status(403).send("opps your product create limit exceed")
-         }
-          
-   })
+      // calculate product selling price depends on users data;
+      const tax = 7.5;
+      const sellingPrice =
+        productioncost +
+        (productioncost * tax) / 100 +
+        (productioncost * profitmargin) / 100;
 
-   // add product in cart
-   app.post("/carts",async(req,res)=>{
-        const productData = req.body;
-        // checking item alredy in cart or not
-        const query = productData.productId;
-        const itemExeist = await carts.findOne({productId:query});
+      // create product object
+      const product = {
+        shop_id,
+        shopname,
+        useremail,
+        productname,
+        imageUrl,
+        productlocation,
+        profitmargin,
+        productquantity,
+        productioncost,
+        discount,
+        productdescription,
+        productAddingDate,
+        sellingPrice,
+        saleCount: 0,
+      };
+      // query for how many product user already addes in db
+      const query = { useremail };
+      const createdShopCount = await products.find(query).toArray();
+      const createStore = createdShopCount.length;
+      console.log(createStore);
+      if (createStore < productLimit) {
+        const productCreateInfo = await products.insertOne(product);
+        res.status(201).send(productCreateInfo);
+      } else {
+        res.status(403).send("opps your product create limit exceed");
+      }
+    });
 
-          // if product not in cart then we add this product on cart collections else we not
-        if(!itemExeist){
-           const cart = await carts.insertOne(productData);
-           res.status(201).send(cart)
-      
-        }else{
-            res.status(409).send({msg:"peoduct already in cart"})
-        }
+    // add product in cart
+    app.post("/carts", async (req, res) => {
+      const productData = req.body;
+      // checking item alredy in cart or not
+      const query = productData.productId;
+      const itemExeist = await carts.findOne({ productId: query });
 
-   })
+      // if product not in cart then we add this product on cart collections else we not
+      if (!itemExeist) {
+        const cart = await carts.insertOne(productData);
+        res.status(201).send(cart);
+      } else {
+        res.status(409).send({ msg: "peoduct already in cart" });
+      }
+    });
 
+    app.post("/salescollections", async (req, res) => {
+      const saledProduct = req.body;
+      const salesProductId = saledProduct.saledproductId.map(
+        (salesproduct) => new ObjectId(salesproduct)
+      );
+      // insert the product on salesCollection
+      const salesInfo = salescollections.insertOne(saledProduct);
 
-   app.post("/salescollections",async(req,res)=>{
-    const saledProduct = req.body;
-    const salesProductId = saledProduct.saledproductId.map(salesproduct=>new ObjectId(salesproduct))
-    // insert the product on salesCollection
-    const salesInfo = salescollections.insertOne(saledProduct)
- 
-
-    /*
+      /*
     const incrementSalesProductCount =await products.aggregate([
          {
           $match : {
@@ -344,74 +358,65 @@ app.get("/salessummary",async(req,res)=>{
 
     ]).toArray()
     */
-   // find the product useing id and then increment the salesCount and decrement the product quantity
-      const incrementSalesProductCount = await  products.updateMany(
-        {_id:{$in : salesProductId }},
+      // find the product useing id and then increment the salesCount and decrement the product quantity
+      const incrementSalesProductCount = await products.updateMany(
+        { _id: { $in: salesProductId } },
         {
-           $inc : {
-            saleCount : 1 ,
-            productquantity : -1
-
-           }
-
+          $inc: {
+            saleCount: 1,
+            productquantity: -1,
+          },
         }
-        
-        )
-     
-    // delete cart items for this specific user after 
-     const query = {useremail:saledProduct?.useremail};
-     const deletedAllCartItems =await carts.deleteMany(query)
-     if(deletedAllCartItems.deletedCount>0){
-       res.status(200).send(deletedAllCartItems)
-     }else{
-       res.status(500).send({msg:"Internal server error"})
-     }
-     
+      );
 
-}) 
+      // delete cart items for this specific user after
+      const query = { useremail: saledProduct?.useremail };
+      const deletedAllCartItems = await carts.deleteMany(query);
+      if (deletedAllCartItems.deletedCount > 0) {
+        res.status(200).send(deletedAllCartItems);
+      } else {
+        res.status(500).send({ msg: "Internal server error" });
+      }
+    });
 
+    // patch mathod is here
 
+    app.patch("/products/:id", async (req, res) => {
+      const id = req.params;
+      const updatedProductInfos = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updatedProductInfo = {
+        $set: {
+          productname: updatedProductInfos.productname,
+          imageUrl: updatedProductInfos.imageUrl,
+          productlocation: updatedProductInfos.productlocation,
+          profitmargin: updatedProductInfos.profitmargin,
+          productquantity: updatedProductInfos.productquantity,
+          productioncost: updatedProductInfos.productioncost,
+          discount: updatedProductInfos.discount,
+          productdescription: updatedProductInfos.productdescription,
+        },
+      };
+      const updatedProduct = await products.updateOne(
+        query,
+        updatedProductInfo
+      );
 
+      if (updatedProduct.modifiedCount > 0) {
+        res.status(200).send(updatedProduct);
+      } else {
+        res.status(500).send("Opps something is wrong");
+      }
+    });
 
-   // patch mathod is here
+    // all delete Method is here
 
-   app.patch("/products/:id",async(req,res)=>{
-        const id = req.params;
-        const updatedProductInfos = req.body;
-        const query = {_id : new ObjectId(id)}
-        const updatedProductInfo = {
-           $set : {
-            productname:updatedProductInfos.productname,
-            imageUrl : updatedProductInfos.imageUrl,
-            productlocation : updatedProductInfos.productlocation,
-            profitmargin : updatedProductInfos.profitmargin,
-            productquantity : updatedProductInfos.productquantity,
-            productioncost : updatedProductInfos.productioncost,
-            discount : updatedProductInfos.discount,
-            productdescription : updatedProductInfos.productdescription
-           }
-
-        }
-        const updatedProduct = await products.updateOne(query,updatedProductInfo);
-      
-        if(updatedProduct.modifiedCount>0){
-          res.status(200).send(updatedProduct)
-        }else{
-           res.status(500).send("Opps something is wrong")
-        }
-
-   })
-
-
-
-// all delete Method is here
-
-app.delete("/products/:id",async(req,res)=>{
-    const id = req.params.id;
-    const query = {_id : new ObjectId(id)}
-   const deletetedProduct =await products.deleteOne(query)
-   res.status(200).send(deletetedProduct)
-})
+    app.delete("/products/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const deletetedProduct = await products.deleteOne(query);
+      res.status(200).send(deletetedProduct);
+    });
 
     // health check route
     app.get("/health", (req, res) => {
