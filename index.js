@@ -109,6 +109,44 @@ async function run() {
 
    })
 
+// get sales summary
+
+app.get("/salessummary",async(req,res)=>{
+      const query = req.query;
+      const salesDetails = await  salescollections.findOne(query)
+      const saledProductId = salesDetails?.saledproductId
+       const productId = saledProductId?.map(id=>new ObjectId(id));
+       
+        const salesProductCount = await products.aggregate([
+          {
+           $match : {
+            _id :{$in : productId },
+          
+           }
+        }
+      
+      
+      ]).toArray()
+  
+    
+       //const saledProductsId =  saledProductData.map(products=>(products.saledproductId))
+       // Calculate production cost for those selling items
+       const totalInvest = salesProductCount.reduce((int,cur)=>{
+        return int + cur.productioncost * cur.saleCount
+     },0);
+
+      // Total sales 
+     const totalSales =salesProductCount.reduce((int,cur)=>{
+      return int + cur.sellingPrice* cur.saleCount
+   },0);
+
+    // Total profit
+   const totalprofit = totalSales - totalInvest;
+
+    res.status(200).send({totalInvest,totalSales,totalprofit})
+
+})
+
 
     // all post method here
 
@@ -128,6 +166,7 @@ async function run() {
       const { useremail } = shopInfo;
       const query = { useremail };
       const haveStore = await shops.findOne(query);
+      console.log(haveStore)
       if (haveStore) {
         res.status(409).send({ error: "already have store" });
       } else {
@@ -175,7 +214,7 @@ async function run() {
          const query = {useremail}
          const createdShopCount = await products.find(query).toArray();
          const createStore = createdShopCount.length;
-
+        console.log(createStore)
          if(createStore<productLimit){
            const productCreateInfo = await products.insertOne(product);
            res.status(201).send(productCreateInfo)
@@ -207,7 +246,10 @@ async function run() {
    app.post("/salescollections",async(req,res)=>{
     const saledProduct = req.body;
     const salesProductId = saledProduct.saledproductId.map(salesproduct=>new ObjectId(salesproduct))
-  
+    // insert the product on salesCollection
+    const salesInfo = salescollections.insertOne(saledProduct)
+ 
+
     /*
     const incrementSalesProductCount =await products.aggregate([
          {
@@ -220,7 +262,7 @@ async function run() {
     ]).toArray()
     */
    // find the product useing id and then increment the salesCount and decrement the product quantity
-      const incrementSalesProductCount =await  products.updateMany(
+      const incrementSalesProductCount = await  products.updateMany(
         {_id:{$in : salesProductId }},
         {
            $inc : {
