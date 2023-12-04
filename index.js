@@ -2,13 +2,13 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const cors = require("cors");
+const nodemailer = require("nodemailer");
 // middleware
 app.use(express.json());
 app.use(cors());
 const PORT = process.env.PORT || 3000;
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
-const { Carousel } = require("flowbite-react");
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.6bozc1k.mongodb.net/?retryWrites=true&w=majority`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -39,9 +39,21 @@ async function run() {
     const salescollections = database.collection("salescollection");
 
     // all get methods
+     
+    app.get("/users",async(req,res)=>{
+         const query = req.query;
+         const user =await users.findOne(query);
+         console.log(user)
+        res.status(200).send(user)
+
+    })
+
+
+
+
 
     // checking user have store or not
-    app.get("/users", async (req, res) => {
+    app.get("/shops", async (req, res) => {
       const useremail = req?.query?.email;
       const query = { useremail };
       // checking user have store or not
@@ -104,6 +116,7 @@ async function run() {
     // get sales summary
 
     app.get("/salessummary", async (req, res) => {
+     
       const query = req.query;
       const salesDetails = await salescollections.findOne(query);
       const saledProductId = salesDetails?.saledproductId;
@@ -203,8 +216,7 @@ async function run() {
 // permission check middleware
 const haspermission = (req,_res,next)=>{
     const email = req.query.useremail;
-    console.log(email)
-   if(email==="somrat@gmail.com"){
+   if(email==="admin@gmail.com"){
        next()
    }else{
        req.status(403).send({msg : "Opps something wrong"})
@@ -212,6 +224,7 @@ const haspermission = (req,_res,next)=>{
 }
 // get all users for admins
 app.get("/allusers",haspermission,async(req,res)=>{
+
    const allusers =await users.find().toArray();
    res.status(200).send(allusers)
 })
@@ -219,7 +232,8 @@ app.get("/allusers",haspermission,async(req,res)=>{
 // get all shops for admin
 
 app.get("/allshops",haspermission,async(req,res)=>{
-     const allShops = await shops.find().toArray();
+ 
+     const allShops = await shops.find().toArray()
       res.status(200).send(allShops)
 })
 
@@ -379,6 +393,41 @@ app.get("/allshops",haspermission,async(req,res)=>{
       }
     });
 
+// send Promotional email
+ // create reusable transporter object using the default SMTP transport
+
+let transporter = nodemailer.createTransport({
+  host: process.env.HOST,
+  port:process.env.SMTP_PORT,
+  secure: false, // true for 465, false for other ports
+  auth: {
+      user:process.env.USER, // generated ethereal user
+      pass:process.env.PASSWORD  // generated ethereal password
+  }
+});
+
+app.post("/sendemail",async(req,res)=>{
+ 
+     const email = req.body
+     const info = await transporter.sendMail({
+      from: "admin@gmail.com", // sender address
+      to: email, // list of receivers
+      subject: "Hello ✔", // Subject line
+      text: "Hello world?", // plain text body
+      html: "<b>Hello world?</b>", // html body
+    });
+    console.log("Message sent: %s", info.messageId)
+})
+
+
+
+
+
+
+
+
+
+
     // patch mathod is here
 
     app.patch("/products/:id", async (req, res) => {
@@ -420,8 +469,28 @@ app.get("/allshops",haspermission,async(req,res)=>{
 
     // health check route
     app.get("/health", (req, res) => {
-      res.send("everzthing is oke");
+      res.send("everzthing is oke")
     });
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+
+
+
+
+
+
+
+
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
@@ -436,5 +505,5 @@ app.get("/allshops",haspermission,async(req,res)=>{
 run().catch(console.dir);
 
 app.listen(PORT, () => {
-  console.log("app is listenting on port", PORT);
+  console.log("app is listenting on port", PORT)
 });
