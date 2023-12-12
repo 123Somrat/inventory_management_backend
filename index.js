@@ -475,6 +475,18 @@ app.post("/sendemail",async(req,res)=>{
       }
     });
 
+    // change user status
+    app.patch("/changeuserstatus",async(req,res)=>{
+         const query = req.query;
+         const updatedUserInfo = {
+            $set : {
+               status : "accepted"
+            }
+         }
+    const infoUserStatusChanged =await users.updateOne(query,updatedUserInfo);
+       res.status(204).send(infoUserStatusChanged)
+    })
+
     // all delete Method is here
 
     app.delete("/products/:id", async (req, res) => {
