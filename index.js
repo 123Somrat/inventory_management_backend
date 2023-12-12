@@ -402,11 +402,11 @@ app.get("/allshops",haspermission,async(req,res)=>{
 app.post("/sendemail",async(req,res)=>{
     const email = req.query.adminEmail;
     const query = {email};
-    const useremail = req.body
+    const useremail = req.body.email
     //  find user it is admin or not by email
      const user = await users.findOne(query);
      const isAdmin = user.role==="admin";
-
+       console.log(useremail)
 
      if(isAdmin){
       mg.messages.create(process.env.MAILGUN_DOMAIN , {
