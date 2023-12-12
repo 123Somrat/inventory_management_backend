@@ -52,9 +52,6 @@ async function run() {
     })
 
 
-
-
-
     // checking user have store or not
     app.get("/shops", async (req, res) => {
       const useremail = req?.query?.email;
@@ -254,6 +251,8 @@ app.get("/allshops",haspermission,async(req,res)=>{
     // add user in db
     app.post("/users", async (req, res) => {
       const userInfo = req.body;
+      // set user status when first user created in our db
+      userInfo.status="pending"
       const user = await users.insertOne(userInfo);
       res.status(201).send(user);
     });
