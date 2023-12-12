@@ -484,7 +484,7 @@ app.post("/sendemail",async(req,res)=>{
             }
          }
     const infoUserStatusChanged =await users.updateOne(query,updatedUserInfo);
-       res.status(204).send(infoUserStatusChanged)
+       res.status(200).send(infoUserStatusChanged)
     })
 
     // all delete Method is here
