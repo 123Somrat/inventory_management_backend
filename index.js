@@ -2,7 +2,10 @@ require("dotenv").config();
 const express = require("express");
 const app = express();
 const cors = require("cors");
-const nodemailer = require("nodemailer");
+const formData = require('form-data');
+const Mailgun = require('mailgun.js');
+const mailgun = new Mailgun(formData);
+const mg = mailgun.client({username: 'api', key: process.env.MAILGUN_API_KEY });
 // middleware
 app.use(express.json());
 app.use(cors());
@@ -43,7 +46,7 @@ async function run() {
     app.get("/users",async(req,res)=>{
          const query = req.query;
          const user =await users.findOne(query);
-         console.log(user)
+      
         res.status(200).send(user)
 
     })
@@ -216,7 +219,7 @@ async function run() {
 // permission check middleware
 const haspermission = (req,_res,next)=>{
     const email = req.query.useremail;
-   if(email==="admin@gmail.com"){
+   if(email==="mdjafaruddin738@gmail.com"){
        next()
    }else{
        req.status(403).send({msg : "Opps something wrong"})
@@ -395,28 +398,41 @@ app.get("/allshops",haspermission,async(req,res)=>{
 
 // send Promotional email
  // create reusable transporter object using the default SMTP transport
-
-let transporter = nodemailer.createTransport({
-  host: process.env.HOST,
-  port:process.env.SMTP_PORT,
-  secure: false, // true for 465, false for other ports
-  auth: {
-      user:process.env.USER, // generated ethereal user
-      pass:process.env.PASSWORD  // generated ethereal password
-  }
-});
-
 app.post("/sendemail",async(req,res)=>{
- 
-     const email = req.body
-     const info = await transporter.sendMail({
-      from: "admin@gmail.com", // sender address
-      to: email, // list of receivers
-      subject: "Hello ✔", // Subject line
-      text: "Hello world?", // plain text body
-      html: "<b>Hello world?</b>", // html body
-    });
-    console.log("Message sent: %s", info.messageId)
+    const email = req.query.adminEmail;
+    const query = {email};
+    const useremail = req.body
+    //  find user it is admin or not by email
+     const user = await users.findOne(query);
+     const isAdmin = user.role==="admin";
+
+
+     if(isAdmin){
+      mg.messages.create(process.env.MAILGUN_DOMAIN , {
+        from: "Excited User <mailgun@sandbox-123.mailgun.org>",
+        to: ["mdjafaruddinsomrat@gmail.com"],
+        subject: "Hello",
+        text: "Testing some Mailgun awesomness!",
+        html: "<h1>Testing some Mailgun awesomness!</h1>"
+      })
+      .then(msg =>{
+           res.status(200).send(msg)
+      }
+        ) // logs response data
+      .catch(err => {
+           res.status(510).send(err)
+      })
+
+
+
+     }
+     
+
+    
+    
+     /*
+    
+    */
 })
 
 
