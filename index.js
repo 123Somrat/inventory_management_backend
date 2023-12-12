@@ -252,7 +252,9 @@ app.get("/allshops",haspermission,async(req,res)=>{
     app.post("/users", async (req, res) => {
       const userInfo = req.body;
       // set user status when first user created in our db
-      userInfo.status="pending"
+      userInfo.status="pending";
+      // set user role when first user is created in db
+      userInfo.role = "user"
       const user = await users.insertOne(userInfo);
       res.status(201).send(user);
     });
