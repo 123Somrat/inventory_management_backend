@@ -211,8 +211,33 @@ async function run() {
       const totalprofit = totalSales - totalInvest;
     });
 
-// generate jwt token 
+// create verify jwt token middleware
+const verifyToken = (req,res,next)=>{
+ 
+  if(!req.headers.authorization){
+    return res.status(403).send({msg:"Forbidden Access"})
+  }
+   const token = req.headers.authorization.split(" ")[1];
+  
+  
+     jwt.verify(token,process.env.JWT_SECRET_KEY,(err,decode)=>{
+     
+       if(err){
+        return res.status(403).send({msg:"Token expired"})
+       }else{
+           req.userData = decode;
+           next()
+       }
+    })
 
+
+
+}
+
+
+
+
+// generate jwt token 
 app.post("/generatejwttoken",(req,res)=>{
     const userInfo = req.body.email;
     const jwtToken =jwt.sign(userInfo, process.env.JWT_SECRET_KEY);
@@ -224,27 +249,31 @@ app.post("/generatejwttoken",(req,res)=>{
 
 
 
+
+
 // admin gets routes
 
 // permission check middleware
-const haspermission = (req,_res,next)=>{
-    const email = req.query.useremail;
-   if(email==="mdjafaruddin738@gmail.com"){
+const haspermission = async (req,_res,next)=>{
+     const email = req.userData;
+     const user= await users.findOne({email});
+    
+   if(user.role==="admin"){
        next()
    }else{
        req.status(403).send({msg : "Opps something wrong"})
    }
+
 }
 // get all users for admins
-app.get("/allusers",haspermission,async(req,res)=>{
+app.get("/allusers",verifyToken,haspermission,async(req,res)=>{
 
    const allusers =await users.find().toArray();
    res.status(200).send(allusers)
 })
-
 // get all shops for admin
 
-app.get("/allshops",haspermission,async(req,res)=>{
+app.get("/allshops",verifyToken,haspermission,async(req,res)=>{
  
      const allShops = await shops.find().toArray()
       res.status(200).send(allShops)
