@@ -5,6 +5,7 @@ const cors = require("cors");
 const formData = require('form-data');
 const Mailgun = require('mailgun.js');
 const mailgun = new Mailgun(formData);
+var jwt = require('jsonwebtoken');
 const mg = mailgun.client({username: 'api', key: process.env.MAILGUN_API_KEY });
 // middleware
 app.use(express.json());
@@ -209,6 +210,18 @@ async function run() {
       // Total profit
       const totalprofit = totalSales - totalInvest;
     });
+
+// generate jwt token 
+
+app.post("/generatejwttoken",(req,res)=>{
+    const userInfo = req.body.email;
+    const jwtToken =jwt.sign(userInfo, process.env.JWT_SECRET_KEY);
+    res.send({jwtToken})
+
+})
+
+
+
 
 
 // admin gets routes
