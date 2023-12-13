@@ -9,7 +9,7 @@ const mg = mailgun.client({username: 'api', key: process.env.MAILGUN_API_KEY });
 // middleware
 app.use(express.json());
 app.use(cors());
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.6bozc1k.mongodb.net/?retryWrites=true&w=majority`;
@@ -401,17 +401,19 @@ app.get("/allshops",haspermission,async(req,res)=>{
  // create reusable transporter object using the default SMTP transport
 app.post("/sendemail",async(req,res)=>{
     const email = req.query.adminEmail;
+
     const query = {email};
-    const useremail = req.body.email
+    const useremail = req.body.email;
+  
     //  find user it is admin or not by email
      const user = await users.findOne(query);
      const isAdmin = user.role==="admin";
-       console.log(useremail)
+      
 
      if(isAdmin){
       mg.messages.create(process.env.MAILGUN_DOMAIN , {
         from: "Excited User <mailgun@sandbox-123.mailgun.org>",
-        to: ["mdjafaruddinsomrat@gmail.com"],
+        to: `${useremail}`,
         subject: "Hello",
         text: "Testing some Mailgun awesomness!",
         html: "<h1>Testing some Mailgun awesomness!</h1>"
@@ -421,22 +423,42 @@ app.post("/sendemail",async(req,res)=>{
       }
         ) // logs response data
       .catch(err => {
-           res.status(510).send(err)
+        
+        res.status(403).send({msg:err})
       })
 
 
 
      }
      
-
-    
-    
-     /*
-    
-    */
 })
 
 
+// send notice to store owner
+
+app.post("/sendnotice",async(req,res)=>{
+    const storeOwnerEmail = req.body.email;
+    console.log(typeof storeOwnerEmail)
+
+ 
+    
+    mg.messages.create(process.env.MAILGUN_DOMAIN , {
+      from: "Excited User <mailgun@sandbox-123.mailgun.org>",
+      to: `${storeOwnerEmail}`,
+      subject: "Hello dear store owner",
+      text: "Notice enail from Invokia!",
+      html: "<h1>Notice email from invokia!</h1>"
+    })
+    .then(msg =>{
+         res.status(200).send(msg)
+    }
+      ) // logs response data
+    .catch(err => {
+         res.status(510).send(err)
+    })
+
+
+})
 
 
 
