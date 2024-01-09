@@ -57,10 +57,8 @@ async function run() {
     app.get("/shops", async (req, res) => {
       const useremail = req?.query?.email;
       const query = { useremail };
-      console.log(query)
       // checking user have store or not
       const hasStore = await shops.findOne(query);
-      console.log(hasStore)
       // if user have to store then we send the store data
       if (hasStore) {
         res.send(hasStore);
